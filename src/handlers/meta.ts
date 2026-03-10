@@ -8,25 +8,25 @@ export function register(router: Router, ctx: HandlerContext): void {
   router.get("/", (req, res) => {
     const authenticated = isAuthenticated(req, ctx.settings.apiKey);
 
-    const response: Record<string, unknown> = {
+    const certificateInfo = ctx.settings.crypto
+      ? {
+          validityDays: getCertificateValidityDays(ctx.settings.crypto.cert),
+          regenerateRecommended: getCertificateValidityDays(ctx.settings.crypto.cert) < 30,
+        }
+      : { validityDays: 0, regenerateRecommended: true };
+
+    res.json({
       status: "OK",
       manifest: ctx.manifest,
       versions: {
-        self: ctx.manifest.version,
+        self: String(ctx.manifest.version ?? "0.0.0"),
+        obsidian: (ctx.app as any).vault?.config?.version ?? "unknown",
       },
       service: "Obsidian API",
       authenticated,
-    };
-
-    if (authenticated && ctx.settings.crypto) {
-      const validityDays = getCertificateValidityDays(ctx.settings.crypto.cert);
-      response.certificateInfo = {
-        validityDays,
-        regenerateRecommended: validityDays < 30,
-      };
-    }
-
-    res.json(response);
+      apiExtensions: [],
+      certificateInfo,
+    });
   });
 
   router.get(`/${CERT_NAME}`, (_req, res) => {

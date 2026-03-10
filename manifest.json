@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "minAppVersion": "1.0.0",
   "description": "REST API for Obsidian with clean architecture and extended endpoints",
-  "author": "",
+  "author": "vigeron",
+  "authorUrl": "https://github.com/vigeron",
   "isDesktopOnly": true
 }

@@ -59,7 +59,7 @@ export interface PluginSettings {
 export interface HandlerContext {
   app: App;
   settings: PluginSettings;
-  manifest: { id: string; name: string; version: string };
+  manifest: Record<string, unknown>;
   metadata: MetadataServiceInterface;
   resolver: FileResolverServiceInterface;
   respond: ResponseServiceInterface;

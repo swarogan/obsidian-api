@@ -1,23 +1,26 @@
 # Obsidian API
 
-A REST API plugin for [Obsidian](https://obsidian.md) with clean architecture, extended endpoints, and a secure-by-default design.
+A REST API plugin for [Obsidian](https://obsidian.md) — clean replacement for `obsidian-local-rest-api` with extended endpoints and secure-by-default design.
+
+Compatible with [obsidian-mcp-tools](https://github.com/anthropics/obsidian-mcp-tools) for Claude Code integration.
 
 ## Features
 
-- **Full REST API** — CRUD operations on vault files, active file, periodic notes
-- **Search** — Dataview DQL, JsonLogic, and simple text search
-- **Commands** — List and execute Obsidian commands
-- **PATCH engine** — Built on Obsidian's `metadataCache` for accurate heading/block/frontmatter targeting
+- **Full REST API** — CRUD on vault files, active file, periodic notes
+- **Extended endpoints** — tags, tasks, backlinks, links, outline, properties
+- **Search** — simple text, Dataview DQL, JsonLogic, semantic (via Smart Connections)
+- **Templates** — Templater integration
+- **PATCH engine** — built on Obsidian's `metadataCache` for accurate heading/block/frontmatter targeting
 - **Dual-mode PATCH** — JSON body (preferred) or HTTP headers (backward-compatible)
-- **HTTPS** — Self-signed certificate with configurable SANs
-- **Extension API** — Third-party plugins can register custom routes
-- **Constant-time auth** — Timing-safe API key comparison
+- **HTTPS** — self-signed certificate with configurable SANs
+- **Extension API** — third-party plugins can register custom routes
+- **Constant-time auth** — timing-safe API key comparison
 
 ## Installation
 
 ### Manual
 
-1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/your-username/obsidian-api/releases)
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/vigeron/obsidian-api/releases)
 2. Create folder `.obsidian/plugins/obsidian-api/` in your vault
 3. Copy the files into that folder
 4. Enable the plugin in Obsidian Settings → Community Plugins
@@ -25,7 +28,7 @@ A REST API plugin for [Obsidian](https://obsidian.md) with clean architecture, e
 ### Development
 
 ```bash
-git clone https://github.com/your-username/obsidian-api.git
+git clone https://github.com/vigeron/obsidian-api.git
 cd obsidian-api
 npm install
 npm run dev
@@ -63,9 +66,20 @@ Authorization: Bearer <your-api-key>
 | GET/PUT/POST/PATCH/DELETE | `/periodic/:period/` | Periodic notes |
 | POST | `/search/` | DQL or JsonLogic search |
 | POST | `/search/simple/` | Simple text search |
+| POST | `/search/smart` | Semantic search (requires Smart Connections) |
 | GET | `/commands/` | List commands |
 | POST | `/commands/:id/` | Execute command |
 | POST | `/open/*` | Open file in Obsidian UI |
+| GET | `/tags/` | List all tags with counts |
+| GET | `/tags/:tag` | Files with specific tag |
+| GET | `/tasks/` | List tasks across vault |
+| PATCH | `/tasks/` | Toggle task status |
+| GET | `/backlinks/*` | Backlinks for a file |
+| GET | `/links/*` | Outgoing links from a file |
+| GET | `/outline/*` | Heading outline for a file |
+| GET | `/properties/` | All frontmatter properties |
+| GET/PUT/DELETE | `/properties/*` | File frontmatter CRUD |
+| POST | `/templates/execute` | Execute Templater template |
 
 ### PATCH Format
 

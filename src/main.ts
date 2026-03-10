@@ -43,11 +43,7 @@ export default class ObsidianApiPlugin extends Plugin {
     this.ctx = {
       app: this.app,
       settings: this.settings,
-      manifest: {
-        id: this.manifest.id,
-        name: this.manifest.name,
-        version: this.manifest.version,
-      },
+      manifest: { ...this.manifest },
       metadata: new MetadataService(this.app),
       resolver: new FileResolverService(this.app),
       respond: new ResponseService(),

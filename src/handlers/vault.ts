@@ -7,6 +7,11 @@ import { lookup } from "mime-types";
 import type { TFile, TFolder } from "obsidian";
 
 export function register(router: Router, ctx: HandlerContext): void {
+  // /vault/ (root listing) - Express 5 *splat doesn't match empty path
+  router.get("/vault/", async (req, res) => {
+    await vaultGet(ctx, req, res, "");
+  });
+
   router.get("/vault/*splat", async (req, res) => {
     const filePath = getSplatPath(req);
     await vaultGet(ctx, req, res, filePath);

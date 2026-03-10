@@ -19,6 +19,7 @@ import * as backlinksHandler from "./handlers/backlinks";
 import * as linksHandler from "./handlers/links";
 import * as outlineHandler from "./handlers/outline";
 import * as propertiesHandler from "./handlers/properties";
+import * as templatesHandler from "./handlers/templates";
 
 export function createApp(ctx: HandlerContext): express.Express {
   const app = express();
@@ -81,6 +82,7 @@ export function createApp(ctx: HandlerContext): express.Express {
   linksHandler.register(router, ctx);
   outlineHandler.register(router, ctx);
   propertiesHandler.register(router, ctx);
+  templatesHandler.register(router, ctx);
 
   app.use(router);
 

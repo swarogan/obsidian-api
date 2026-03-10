@@ -12,6 +12,10 @@ export function register(router: Router, ctx: HandlerContext): void {
   router.post("/search/simple/", async (req, res) => {
     await searchSimple(ctx, req, res);
   });
+
+  router.post("/search/smart", async (req, res) => {
+    await searchSmart(ctx, req, res);
+  });
 }
 
 async function searchQuery(
@@ -126,7 +130,9 @@ async function searchSimple(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const query = typeof req.body === "string" ? req.body : String(req.body);
+  const bodyQuery = typeof req.body === "string" && req.body.trim() ? req.body : "";
+  const query = bodyQuery || String(req.query.query ?? "");
+  const contextLength = Number(req.query.contextLength) || 100;
 
   if (!query.trim()) {
     ctx.respond.sendError(res, ErrorCode.InvalidSearchQuery, "Query cannot be empty.");
@@ -137,7 +143,6 @@ async function searchSimple(
     const searchFn = prepareSimpleSearch(query);
     const files = ctx.app.vault.getMarkdownFiles();
     const results: SearchResponseItem[] = [];
-    const contextLength = Number(req.query.contextLength) || 100;
 
     for (const file of files) {
       const content = await ctx.app.vault.cachedRead(file);
@@ -174,6 +179,84 @@ async function searchSimple(
       res,
       ErrorCode.SearchFailed,
       e instanceof Error ? e.message : "Search failed.",
+    );
+  }
+}
+
+interface SmartSearchResult {
+  path: string;
+  text: string;
+  score: number;
+  breadcrumbs: string;
+}
+
+async function searchSmart(
+  ctx: HandlerContext,
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+  const query = String(body?.query ?? "");
+  const filter = body?.filter ?? {};
+
+  if (!query.trim()) {
+    ctx.respond.sendError(res, ErrorCode.InvalidSearchQuery, "Query cannot be empty.");
+    return;
+  }
+
+  try {
+    const smartConnections = (ctx.app as any).plugins?.plugins?.["smart-connections"];
+    if (!smartConnections) {
+      ctx.respond.sendError(
+        res,
+        ErrorCode.SearchFailed,
+        "Smart Connections plugin is not available. Install and enable it for semantic search.",
+      );
+      return;
+    }
+
+    const env = smartConnections.env;
+    if (!env?.smart_sources) {
+      ctx.respond.sendError(
+        res,
+        ErrorCode.SearchFailed,
+        "Smart Connections is not fully initialized. Wait for indexing to complete.",
+      );
+      return;
+    }
+
+    const lookupResults = await env.smart_sources.lookup({ hypotheticals: [query] });
+    const limit = filter.limit ?? 50;
+    const folders: string[] | undefined = filter.folders;
+    const excludeFolders: string[] | undefined = filter.excludeFolders;
+
+    const results: SmartSearchResult[] = [];
+
+    for (const item of lookupResults) {
+      if (results.length >= limit) break;
+
+      const itemPath = String(item.item?.path ?? item.path ?? "");
+      if (!itemPath) continue;
+
+      // Apply folder filters
+      if (folders?.length && !folders.some((f) => itemPath.startsWith(f))) continue;
+      if (excludeFolders?.length && excludeFolders.some((f) => itemPath.startsWith(f))) continue;
+
+      const parts = itemPath.replace(/\.md$/, "").split("/");
+      results.push({
+        path: itemPath,
+        text: String(item.item?.name ?? item.name ?? parts[parts.length - 1] ?? ""),
+        score: Number(item.score ?? item.sim ?? 0),
+        breadcrumbs: parts.join(" > "),
+      });
+    }
+
+    ctx.respond.sendSuccess(res, { results });
+  } catch (e: unknown) {
+    ctx.respond.sendError(
+      res,
+      ErrorCode.SearchFailed,
+      e instanceof Error ? e.message : "Smart search failed.",
     );
   }
 }
