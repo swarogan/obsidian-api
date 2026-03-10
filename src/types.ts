@@ -67,6 +67,7 @@ export interface HandlerContext {
 
 export interface MetadataServiceInterface {
   getFileMetadata(file: TFile): Promise<FileMetadataObject>;
+  getDocumentMap(cache: CachedMetadata | null): DocumentMapObject;
   waitForFileCache(file: TFile, timeoutMs?: number): Promise<CachedMetadata | null>;
 }
 
@@ -112,10 +113,6 @@ export interface PatchParams {
   trimTargetWhitespace: boolean;
 }
 
-export interface PatchBatchParams {
-  patches: PatchParams[];
-}
-
 export interface PatchErrorDetails {
   availableTargets?: string[];
   targetRequested?: string;
@@ -136,6 +133,17 @@ export interface SearchMatch {
 export interface SearchJsonResponseItem {
   filename: string;
   result: unknown;
+}
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly errorCode: ErrorCode,
+    public readonly details?: Record<string, unknown>,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
 }
 
 export type Middleware = (req: Request, res: Response, next: NextFunction) => void | Promise<void>;

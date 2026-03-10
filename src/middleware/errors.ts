@@ -1,9 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
-import { ErrorCode } from "../types";
+import { ErrorCode, ApiError } from "../types";
 import { ERROR_MESSAGES } from "../constants";
 
 export function errorHandler(
-  err: Error & { errorCode?: ErrorCode; details?: Record<string, unknown>; status?: number },
+  err: Error & { status?: number },
   _req: Request,
   res: Response,
   _next: NextFunction,
@@ -19,25 +19,31 @@ export function errorHandler(
     return;
   }
 
-  const errorCode = err.errorCode ?? ErrorCode.InternalError;
-  const httpStatus = err.status ?? Math.floor(errorCode / 100);
-  const defaultMessage = ERROR_MESSAGES[errorCode] ?? "An internal error occurred.";
-
-  const body: Record<string, unknown> = {
-    errorCode,
-    message: err.errorCode ? err.message : defaultMessage,
-  };
-
-  if (err.details) {
-    body.details = err.details;
+  if (err instanceof ApiError) {
+    const httpStatus = Math.floor(err.errorCode / 100);
+    const body: Record<string, unknown> = {
+      errorCode: err.errorCode,
+      message: err.message,
+    };
+    if (err.details) {
+      body.details = err.details;
+    }
+    res.status(httpStatus).json(body);
+    return;
   }
 
-  res.status(httpStatus).json(body);
+  const httpStatus = err.status ?? 500;
+  const defaultMessage = ERROR_MESSAGES[ErrorCode.InternalError];
+
+  res.status(httpStatus).json({
+    errorCode: ErrorCode.InternalError,
+    message: defaultMessage,
+  });
 }
 
 export function notFoundHandler(_req: Request, res: Response): void {
   res.status(404).json({
-    errorCode: 40400,
+    errorCode: ErrorCode.FileNotFound,
     message: "Endpoint not found.",
   });
 }

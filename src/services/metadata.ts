@@ -24,6 +24,10 @@ export class MetadataService implements MetadataServiceInterface {
   }
 
   getDocumentMap(cache: CachedMetadata | null): DocumentMapObject {
+    return MetadataService.buildDocumentMap(cache);
+  }
+
+  static buildDocumentMap(cache: CachedMetadata | null): DocumentMapObject {
     const headings = (cache?.headings ?? []).map(
       (h) => `${"#".repeat(h.level)} ${h.heading}`
     );

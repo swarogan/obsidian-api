@@ -3,8 +3,8 @@ import {
   findHeadingBounds,
   findBlockBounds,
   patchContent,
-  buildDocumentMap,
 } from "../../src/services/patch";
+import { MetadataService } from "../../src/services/metadata";
 import type { CachedMetadata, HeadingCache, Loc } from "obsidian";
 
 function loc(line: number, col: number, offset: number): Loc {
@@ -236,7 +236,7 @@ describe("buildDocumentMap", () => {
       },
     } as unknown as CachedMetadata;
 
-    const map = buildDocumentMap(cache);
+    const map = MetadataService.buildDocumentMap(cache);
 
     expect(map.headings).toEqual(["# Title", "## Section"]);
     expect(map.blocks).toEqual(["block1"]);
@@ -248,7 +248,7 @@ describe("buildDocumentMap", () => {
   it("handles empty cache", () => {
     const cache: CachedMetadata = {} as CachedMetadata;
 
-    const map = buildDocumentMap(cache);
+    const map = MetadataService.buildDocumentMap(cache);
 
     expect(map.headings).toEqual([]);
     expect(map.blocks).toEqual([]);

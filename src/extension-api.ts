@@ -6,12 +6,14 @@ import { ErrorCode } from "./types";
 
 export class ExtensionApi {
   private readonly router: express.Router;
+  private readonly parentRouter: express.Router;
 
   constructor(
     private readonly ctx: HandlerContext,
     parentRouter: express.Router,
   ) {
     this.router = express.Router();
+    this.parentRouter = parentRouter;
     parentRouter.use(this.router);
   }
 
@@ -44,14 +46,13 @@ export class ExtensionApi {
   }
 
   unregister(): void {
-    // Remove the router from the parent stack
-    const parentRouter = (this.router as any)._parentRouter;
-    if (parentRouter?.stack) {
-      const idx = parentRouter.stack.findIndex(
+    const stack = (this.parentRouter as any).stack;
+    if (Array.isArray(stack)) {
+      const idx = stack.findIndex(
         (layer: any) => layer.handle === this.router,
       );
       if (idx !== -1) {
-        parentRouter.stack.splice(idx, 1);
+        stack.splice(idx, 1);
       }
     }
   }

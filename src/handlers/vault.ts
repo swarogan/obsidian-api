@@ -70,9 +70,7 @@ export async function vaultGet(
 
   if (accept.includes(CONTENT_TYPES.documentMap)) {
     const cache = await ctx.metadata.waitForFileCache(file);
-    const { MetadataService } = await import("../services/metadata");
-    const metaSvc = ctx.metadata as MetadataService;
-    const docMap = metaSvc.getDocumentMap(cache);
+    const docMap = ctx.metadata.getDocumentMap(cache);
     ctx.respond.sendSuccess(res, docMap);
     return;
   }

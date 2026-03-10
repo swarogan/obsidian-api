@@ -1,5 +1,5 @@
 import type { App, TFile } from "obsidian";
-import { ErrorCode, type FileResolverServiceInterface } from "../types";
+import { ErrorCode, ApiError, type FileResolverServiceInterface } from "../types";
 
 export class FileResolverService implements FileResolverServiceInterface {
   constructor(private app: App) {}
@@ -25,9 +25,7 @@ export class FileResolverService implements FileResolverServiceInterface {
   resolveOrThrow(nameOrPath: string): TFile {
     const file = this.resolve(nameOrPath);
     if (!file) {
-      const err = new Error(`File not found: ${nameOrPath}`);
-      (err as any).errorCode = ErrorCode.FileNotFound;
-      throw err;
+      throw new ApiError(`File not found: ${nameOrPath}`, ErrorCode.FileNotFound);
     }
     return file;
   }

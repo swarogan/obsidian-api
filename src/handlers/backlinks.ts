@@ -32,23 +32,26 @@ export function register(router: Router, ctx: HandlerContext): void {
       const cache = ctx.app.metadataCache.getFileCache(file);
       if (!cache?.links) continue;
 
-      for (const link of cache.links) {
+      const matchingLinks = cache.links.filter((link) => {
         const resolved = ctx.app.metadataCache.getFirstLinkpathDest(link.link, file.path);
-        const matches = resolved?.path === targetPath || link.link === targetBasename;
+        return resolved?.path === targetPath || link.link === targetBasename;
+      });
 
-        if (matches) {
-          const content = await ctx.app.vault.cachedRead(file);
-          const lines = content.split("\n");
-          const line = link.position.start.line;
-          const context = lines[line] ?? "";
+      if (matchingLinks.length === 0) continue;
 
-          backlinks.push({
-            source: file.path,
-            displayText: link.displayText ?? link.link,
-            line,
-            context: context.trim(),
-          });
-        }
+      const content = await ctx.app.vault.cachedRead(file);
+      const lines = content.split("\n");
+
+      for (const link of matchingLinks) {
+        const line = link.position.start.line;
+        const context = lines[line] ?? "";
+
+        backlinks.push({
+          source: file.path,
+          displayText: link.displayText ?? link.link,
+          line,
+          context: context.trim(),
+        });
       }
     }
 

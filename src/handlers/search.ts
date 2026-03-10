@@ -28,7 +28,7 @@ async function searchQuery(
 
   if (
     contentType.includes(CONTENT_TYPES.jsonLogic) ||
-    contentType.includes("application/json")
+    contentType.includes(CONTENT_TYPES.json)
   ) {
     await searchJsonLogic(ctx, req, res);
     return;

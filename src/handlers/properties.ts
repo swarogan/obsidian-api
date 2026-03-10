@@ -5,7 +5,6 @@ import { getSplatPath } from "./vault";
 
 interface PropertyInfo {
   count: number;
-  values: Set<string>;
 }
 
 export function register(router: Router, ctx: HandlerContext): void {
@@ -25,11 +24,9 @@ export function register(router: Router, ctx: HandlerContext): void {
         if (key === "position") continue;
 
         if (!propMap.has(key)) {
-          propMap.set(key, { count: 0, values: new Set() });
+          propMap.set(key, { count: 0 });
         }
-        const info = propMap.get(key)!;
-        info.count++;
-        info.values.add(String(value));
+        propMap.get(key)!.count++;
       }
     }
 

@@ -9,6 +9,6 @@ export function register(router: Router, ctx: HandlerContext): void {
 
     await ctx.app.workspace.openLinkText(filePath, "/", newLeaf);
 
-    res.status(200).json({});
+    res.status(204).send();
   });
 }

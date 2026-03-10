@@ -1,6 +1,7 @@
-import type { App, CachedMetadata, HeadingCache, SectionCache, TFile } from "obsidian";
+import type { App, CachedMetadata, TFile } from "obsidian";
 import type { PatchParams, PatchErrorDetails, DocumentMapObject } from "../types";
-import { ErrorCode } from "../types";
+import { ErrorCode, ApiError } from "../types";
+import { MetadataService } from "./metadata";
 import type { Request } from "express";
 
 export function extractPatchParams(req: Request): PatchParams {
@@ -45,16 +46,12 @@ function extractFromHeaders(req: Request): PatchParams {
 
 function validateOperation(op: string): PatchParams["operation"] {
   if (op === "append" || op === "prepend" || op === "replace") return op;
-  const err = new Error(`Invalid operation: "${op}"`);
-  (err as any).errorCode = ErrorCode.InvalidOperation;
-  throw err;
+  throw new ApiError(`Invalid operation: "${op}"`, ErrorCode.InvalidOperation);
 }
 
 function validateTargetType(tt: string): PatchParams["targetType"] {
   if (tt === "heading" || tt === "block" || tt === "frontmatter") return tt;
-  const err = new Error(`Invalid target type: "${tt}"`);
-  (err as any).errorCode = ErrorCode.InvalidTargetType;
-  throw err;
+  throw new ApiError(`Invalid target type: "${tt}"`, ErrorCode.InvalidTargetType);
 }
 
 export async function applyPatch(
@@ -92,7 +89,7 @@ export async function applyPatch(
       return patched;
     }
 
-    const docMap = buildDocumentMap(cache);
+    const docMap = MetadataService.buildDocumentMap(cache);
     const err = createPatchError(
       `Target "${target}" not found in document.`,
       target,
@@ -256,18 +253,6 @@ function createMissingHeading(fileContent: string, params: PatchParams): string 
   return fileContent + separator + heading + "\n" + params.content + "\n";
 }
 
-export function buildDocumentMap(cache: CachedMetadata): DocumentMapObject {
-  const headings = (cache.headings ?? []).map(
-    (h) => `${"#".repeat(h.level)} ${h.heading}`
-  );
-  const blocks = Object.keys(cache.blocks ?? {});
-  const frontmatterFields = Object.keys(cache.frontmatter ?? {}).filter(
-    (k) => k !== "position"
-  );
-
-  return { headings, blocks, frontmatterFields };
-}
-
 function lineToOffset(lines: string[], lineNumber: number): number {
   let offset = 0;
   for (let i = 0; i < lineNumber && i < lines.length; i++) {
@@ -285,13 +270,8 @@ function createPatchError(
   message: string,
   targetRequested: string,
   documentMap?: DocumentMapObject,
-): Error & { errorCode: ErrorCode; details: PatchErrorDetails } {
-  const err = new Error(message) as Error & {
-    errorCode: ErrorCode;
-    details: PatchErrorDetails;
-  };
-  err.errorCode = ErrorCode.TargetNotFound;
-  err.details = {
+): ApiError {
+  const details: PatchErrorDetails = {
     targetRequested,
     ...(documentMap && { documentMap }),
     ...(documentMap && {
@@ -302,5 +282,5 @@ function createPatchError(
       ],
     }),
   };
-  return err;
+  return new ApiError(message, ErrorCode.TargetNotFound, details);
 }

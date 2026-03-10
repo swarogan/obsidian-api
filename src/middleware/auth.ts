@@ -5,6 +5,11 @@ import { ErrorCode } from "../types";
 
 const PUBLIC_PATHS = new Set(["/", `/${CERT_NAME}`, "/openapi.yaml"]);
 
+function extractBearerToken(req: Request): string {
+  const authHeader = req.headers.authorization ?? "";
+  return authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+}
+
 export function createAuthMiddleware(getApiKey: () => string) {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (PUBLIC_PATHS.has(req.path)) {
@@ -12,10 +17,7 @@ export function createAuthMiddleware(getApiKey: () => string) {
       return;
     }
 
-    const authHeader = req.headers.authorization ?? "";
-    const token = authHeader.startsWith("Bearer ")
-      ? authHeader.slice(7)
-      : "";
+    const token = extractBearerToken(req);
 
     if (!token || !verifyApiKey(token, getApiKey())) {
       res.status(401).json({
@@ -30,8 +32,7 @@ export function createAuthMiddleware(getApiKey: () => string) {
 }
 
 export function isAuthenticated(req: Request, apiKey: string): boolean {
-  const authHeader = req.headers.authorization ?? "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  const token = extractBearerToken(req);
   if (!token) return false;
   return verifyApiKey(token, apiKey);
 }
