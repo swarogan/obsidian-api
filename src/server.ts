@@ -13,6 +13,12 @@ import * as searchHandler from "./handlers/search";
 import * as commandsHandler from "./handlers/commands";
 import * as openHandler from "./handlers/open";
 import * as periodicHandler from "./handlers/periodic";
+import * as tagsHandler from "./handlers/tags";
+import * as tasksHandler from "./handlers/tasks";
+import * as backlinksHandler from "./handlers/backlinks";
+import * as linksHandler from "./handlers/links";
+import * as outlineHandler from "./handlers/outline";
+import * as propertiesHandler from "./handlers/properties";
 
 export function createApp(ctx: HandlerContext): express.Express {
   const app = express();
@@ -69,6 +75,12 @@ export function createApp(ctx: HandlerContext): express.Express {
   commandsHandler.register(router, ctx);
   openHandler.register(router, ctx);
   periodicHandler.register(router, ctx);
+  tagsHandler.register(router, ctx);
+  tasksHandler.register(router, ctx);
+  backlinksHandler.register(router, ctx);
+  linksHandler.register(router, ctx);
+  outlineHandler.register(router, ctx);
+  propertiesHandler.register(router, ctx);
 
   app.use(router);
 
