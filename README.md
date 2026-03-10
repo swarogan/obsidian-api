@@ -129,6 +129,14 @@ if (api) {
 }
 ```
 
+## Network Usage
+
+This plugin starts a **local HTTP/HTTPS server** on your machine (default: `127.0.0.1`). It does **not** connect to any external services or send data over the internet.
+
+The server listens only on the configured binding host and port, accepting REST API requests from local clients (e.g. MCP tools, scripts, browser extensions). All communication stays on your machine unless you explicitly change the binding host to a non-loopback address.
+
+Optional integrations (Smart Connections, Dataview, Templater) communicate only with locally installed Obsidian plugins — no network requests are made on their behalf.
+
 ## Security
 
 - API key generated with cryptographic random bytes (SHA-256)

@@ -58,12 +58,12 @@ export default class ObsidianApiPlugin extends Plugin {
     // Register settings tab
     this.addSettingTab(new ObsidianApiSettingTab(this.app, this));
 
-    console.log("[obsidian-api] Plugin loaded.");
+    console.debug("[obsidian-api] Plugin loaded.");
   }
 
   onunload(): void {
     this.stopServers();
-    console.log("[obsidian-api] Plugin unloaded.");
+    console.debug("[obsidian-api] Plugin unloaded.");
   }
 
   async loadSettings(): Promise<void> {
@@ -88,7 +88,7 @@ export default class ObsidianApiPlugin extends Plugin {
       );
 
       this.secureServer.listen(this.settings.port, host, () => {
-        console.log(
+        console.debug(
           `[obsidian-api] HTTPS server listening on https://${host}:${this.settings.port}`,
         );
       });
@@ -102,7 +102,7 @@ export default class ObsidianApiPlugin extends Plugin {
       this.insecureServer = http.createServer(expressApp);
 
       this.insecureServer.listen(this.settings.insecurePort, host, () => {
-        console.log(
+        console.debug(
           `[obsidian-api] HTTP server listening on http://${host}:${this.settings.insecurePort}`,
         );
       });
