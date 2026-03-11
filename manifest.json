@@ -1,9 +1,9 @@
 {
-  "id": "obsidian-api",
-  "name": "Obsidian API",
+  "id": "rest-api",
+  "name": "REST API",
   "version": "0.1.0",
   "minAppVersion": "1.0.0",
-  "description": "REST API for Obsidian with clean architecture and extended endpoints",
+  "description": "Local REST API server with clean architecture and extended endpoints.",
   "author": "vigeron",
   "authorUrl": "https://github.com/vigeron",
   "isDesktopOnly": true,
