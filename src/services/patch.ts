@@ -4,6 +4,12 @@ import { ErrorCode, ApiError } from "../types";
 import { MetadataService } from "./metadata";
 import type { Request } from "express";
 
+export interface ParsedHeading {
+  heading: string;
+  level: number;
+  line: number;
+}
+
 export function extractPatchParams(req: Request): PatchParams {
   const contentType = req.headers["content-type"] ?? "";
   const isJsonBody =
@@ -65,20 +71,18 @@ export async function applyPatch(
   }
 
   const fileContent = await app.vault.cachedRead(file);
-  const cache = app.metadataCache.getFileCache(file);
-
-  if (!cache) {
-    throw createPatchError("No metadata cache available for file.", params.target);
-  }
-
   const target = params.trimTargetWhitespace ? params.target.trim() : params.target;
 
   let bounds: { contentStart: number; contentEnd: number } | null;
 
   if (params.targetType === "heading") {
     const headingPath = target.split(params.targetDelimiter);
-    bounds = findHeadingBounds(cache, headingPath, fileContent);
+    bounds = findHeadingBounds(headingPath, fileContent);
   } else {
+    const cache = app.metadataCache.getFileCache(file);
+    if (!cache) {
+      throw createPatchError("No metadata cache available for file.", target);
+    }
     bounds = findBlockBounds(cache, target, fileContent);
   }
 
@@ -89,7 +93,8 @@ export async function applyPatch(
       return patched;
     }
 
-    const docMap = MetadataService.buildDocumentMap(cache);
+    const cache = app.metadataCache.getFileCache(file);
+    const docMap = cache ? MetadataService.buildDocumentMap(cache) : undefined;
     const err = createPatchError(
       `Target "${target}" not found in document.`,
       target,
@@ -104,11 +109,10 @@ export async function applyPatch(
 }
 
 export function findHeadingBounds(
-  cache: CachedMetadata,
   headingPath: string[],
   fileContent: string,
 ): { contentStart: number; contentEnd: number } | null {
-  const headings = cache.headings ?? [];
+  const headings = parseHeadingsFromContent(fileContent);
   if (headings.length === 0 || headingPath.length === 0) return null;
 
   let currentScope = 0;
@@ -122,7 +126,7 @@ export function findHeadingBounds(
     let found = false;
 
     for (let i = currentScope; i < headings.length; i++) {
-      if (headings[i].heading.trim() === targetName) {
+      if (headings[i].heading === targetName) {
         if (isLast) {
           targetIndex = i;
           targetLevel = headings[i].level;
@@ -143,7 +147,7 @@ export function findHeadingBounds(
   if (targetIndex === -1) return null;
 
   const lines = fileContent.split("\n");
-  const headingLine = headings[targetIndex].position.start.line;
+  const headingLine = headings[targetIndex].line;
 
   // Content starts on the line after the heading
   const contentStart = lineToOffset(lines, headingLine + 1);
@@ -152,12 +156,54 @@ export function findHeadingBounds(
   let contentEnd = fileContent.length;
   for (let i = targetIndex + 1; i < headings.length; i++) {
     if (headings[i].level <= targetLevel) {
-      contentEnd = lineToOffset(lines, headings[i].position.start.line);
+      contentEnd = lineToOffset(lines, headings[i].line);
       break;
     }
   }
 
   return { contentStart, contentEnd };
+}
+
+export function parseHeadingsFromContent(content: string): ParsedHeading[] {
+  const lines = content.split("\n");
+  const headings: ParsedHeading[] = [];
+  let inCodeBlock = false;
+  let inFrontmatter = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Frontmatter: only at the very start of the file
+    if (i === 0 && line === "---") {
+      inFrontmatter = true;
+      continue;
+    }
+    if (inFrontmatter) {
+      if (line === "---") {
+        inFrontmatter = false;
+      }
+      continue;
+    }
+
+    // Code blocks (``` or ~~~)
+    if (/^(`{3,}|~{3,})/.test(line)) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    if (inCodeBlock) continue;
+
+    // ATX headings
+    const match = line.match(/^(#{1,6})\s+(.+?)(?:\s+#+\s*)?$/);
+    if (match) {
+      headings.push({
+        heading: match[2].trim(),
+        level: match[1].length,
+        line: i,
+      });
+    }
+  }
+
+  return headings;
 }
 
 export function findBlockBounds(

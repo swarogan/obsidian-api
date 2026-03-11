@@ -3,6 +3,7 @@ import {
   findHeadingBounds,
   findBlockBounds,
   patchContent,
+  parseHeadingsFromContent,
 } from "../../src/services/patch";
 import { MetadataService } from "../../src/services/metadata";
 import type { CachedMetadata, HeadingCache, Loc } from "obsidian";
@@ -22,6 +23,71 @@ function heading(text: string, level: number, line: number): HeadingCache {
   };
 }
 
+describe("parseHeadingsFromContent", () => {
+  it("parses ATX headings", () => {
+    const content = "# H1\n## H2\n### H3\ntext\n#### H4";
+    const headings = parseHeadingsFromContent(content);
+
+    expect(headings).toEqual([
+      { heading: "H1", level: 1, line: 0 },
+      { heading: "H2", level: 2, line: 1 },
+      { heading: "H3", level: 3, line: 2 },
+      { heading: "H4", level: 4, line: 4 },
+    ]);
+  });
+
+  it("skips headings inside code blocks", () => {
+    const content = "# Real\n```\n## Fake\n```\n## Also Real";
+    const headings = parseHeadingsFromContent(content);
+
+    expect(headings).toHaveLength(2);
+    expect(headings[0].heading).toBe("Real");
+    expect(headings[1].heading).toBe("Also Real");
+  });
+
+  it("skips headings inside tilde code blocks", () => {
+    const content = "# Real\n~~~\n## Fake\n~~~\n## Also Real";
+    const headings = parseHeadingsFromContent(content);
+
+    expect(headings).toHaveLength(2);
+  });
+
+  it("skips frontmatter", () => {
+    const content = "---\ntitle: Test\n---\n# Heading";
+    const headings = parseHeadingsFromContent(content);
+
+    expect(headings).toHaveLength(1);
+    expect(headings[0].heading).toBe("Heading");
+    expect(headings[0].line).toBe(3);
+  });
+
+  it("handles trailing hashes", () => {
+    const content = "## Heading ##";
+    const headings = parseHeadingsFromContent(content);
+
+    expect(headings).toHaveLength(1);
+    expect(headings[0].heading).toBe("Heading");
+  });
+
+  it("handles unicode headings", () => {
+    const content = "# Główny nagłówek\n## Sekcja żółć";
+    const headings = parseHeadingsFromContent(content);
+
+    expect(headings).toEqual([
+      { heading: "Główny nagłówek", level: 1, line: 0 },
+      { heading: "Sekcja żółć", level: 2, line: 1 },
+    ]);
+  });
+
+  it("does not parse lines without space after hashes", () => {
+    const content = "#Not a heading\n## Real heading";
+    const headings = parseHeadingsFromContent(content);
+
+    expect(headings).toHaveLength(1);
+    expect(headings[0].heading).toBe("Real heading");
+  });
+});
+
 describe("findHeadingBounds", () => {
   const content = [
     "# Title",            // 0
@@ -37,27 +103,16 @@ describe("findHeadingBounds", () => {
     "content C",          // 10
   ].join("\n");
 
-  const cache: CachedMetadata = {
-    headings: [
-      heading("Title", 1, 0),
-      heading("Section A", 2, 2),
-      heading("Section B", 2, 5),
-      heading("Subsection B1", 3, 7),
-      heading("Section C", 2, 9),
-    ],
-  } as CachedMetadata;
-
   it("finds top-level heading bounds", () => {
-    const bounds = findHeadingBounds(cache, ["Title"], content);
+    const bounds = findHeadingBounds(["Title"], content);
     expect(bounds).not.toBeNull();
 
     const extracted = content.slice(bounds!.contentStart, bounds!.contentEnd);
-    // Title heading includes everything until end since it's the only level-1
     expect(extracted).toContain("intro text");
   });
 
   it("finds section A bounds", () => {
-    const bounds = findHeadingBounds(cache, ["Section A"], content);
+    const bounds = findHeadingBounds(["Section A"], content);
     expect(bounds).not.toBeNull();
 
     const extracted = content.slice(bounds!.contentStart, bounds!.contentEnd);
@@ -67,7 +122,7 @@ describe("findHeadingBounds", () => {
   });
 
   it("finds section B bounds including subsection", () => {
-    const bounds = findHeadingBounds(cache, ["Section B"], content);
+    const bounds = findHeadingBounds(["Section B"], content);
     expect(bounds).not.toBeNull();
 
     const extracted = content.slice(bounds!.contentStart, bounds!.contentEnd);
@@ -78,7 +133,7 @@ describe("findHeadingBounds", () => {
   });
 
   it("finds nested heading path", () => {
-    const bounds = findHeadingBounds(cache, ["Section B", "Subsection B1"], content);
+    const bounds = findHeadingBounds(["Section B", "Subsection B1"], content);
     expect(bounds).not.toBeNull();
 
     const extracted = content.slice(bounds!.contentStart, bounds!.contentEnd);
@@ -87,12 +142,12 @@ describe("findHeadingBounds", () => {
   });
 
   it("returns null for non-existent heading", () => {
-    const bounds = findHeadingBounds(cache, ["Nonexistent"], content);
+    const bounds = findHeadingBounds(["Nonexistent"], content);
     expect(bounds).toBeNull();
   });
 
   it("returns null for empty heading path", () => {
-    const bounds = findHeadingBounds(cache, [], content);
+    const bounds = findHeadingBounds([], content);
     expect(bounds).toBeNull();
   });
 
@@ -106,20 +161,48 @@ describe("findHeadingBounds", () => {
       "treść następna",
     ].join("\n");
 
-    const unicodeCache: CachedMetadata = {
-      headings: [
-        heading("Główny nagłówek", 1, 0),
-        heading("Sekcja żółć", 2, 2),
-        heading("Następna", 2, 4),
-      ],
-    } as CachedMetadata;
-
-    const bounds = findHeadingBounds(unicodeCache, ["Sekcja żółć"], unicodeContent);
+    const bounds = findHeadingBounds(["Sekcja żółć"], unicodeContent);
     expect(bounds).not.toBeNull();
 
     const extracted = unicodeContent.slice(bounds!.contentStart, bounds!.contentEnd);
     expect(extracted).toContain("treść sekcji");
     expect(extracted).not.toContain("treść następna");
+  });
+
+  it("ignores headings inside code blocks", () => {
+    const codeContent = [
+      "# Real heading",
+      "some text",
+      "```",
+      "## Fake heading",
+      "```",
+      "## Another real",
+      "more text",
+    ].join("\n");
+
+    const bounds = findHeadingBounds(["Fake heading"], codeContent);
+    expect(bounds).toBeNull();
+
+    const realBounds = findHeadingBounds(["Another real"], codeContent);
+    expect(realBounds).not.toBeNull();
+    const extracted = codeContent.slice(realBounds!.contentStart, realBounds!.contentEnd);
+    expect(extracted).toContain("more text");
+  });
+
+  it("works with frontmatter", () => {
+    const fmContent = [
+      "---",
+      "title: Test",
+      "---",
+      "# Heading",
+      "content here",
+    ].join("\n");
+
+    const bounds = findHeadingBounds(["Heading"], fmContent);
+    expect(bounds).not.toBeNull();
+
+    const extracted = fmContent.slice(bounds!.contentStart, bounds!.contentEnd);
+    expect(extracted).toContain("content here");
   });
 });
 
