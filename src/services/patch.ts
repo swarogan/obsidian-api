@@ -26,7 +26,9 @@ export function extractPatchParams(req: Request): PatchParams {
 
 function extractFromBody(body: Record<string, unknown>): PatchParams {
   const operation = validateOperation(typeof body.operation === "string" ? body.operation : "");
-  const targetType = validateTargetType(typeof body.targetType === "string" ? body.targetType : "");
+  const targetType = operation === "search-replace"
+    ? ("heading" as PatchParams["targetType"]) // unused for search-replace, but satisfies the type
+    : validateTargetType(typeof body.targetType === "string" ? body.targetType : "");
   const target = typeof body.target === "string" ? body.target : "";
   const content = typeof body.content === "string" ? body.content : "";
   const targetDelimiter = typeof body.targetDelimiter === "string" ? body.targetDelimiter : "::";
@@ -38,7 +40,9 @@ function extractFromBody(body: Record<string, unknown>): PatchParams {
 
 function extractFromHeaders(req: Request): PatchParams {
   const operation = validateOperation(String(req.headers["operation"] ?? ""));
-  const targetType = validateTargetType(String(req.headers["target-type"] ?? ""));
+  const targetType = operation === "search-replace"
+    ? ("heading" as PatchParams["targetType"])
+    : validateTargetType(String(req.headers["target-type"] ?? ""));
   const rawTarget = String(req.headers["target"] ?? "");
   const target = decodeURIComponent(rawTarget);
   const targetDelimiter = String(req.headers["target-delimiter"] ?? "::");
@@ -51,7 +55,7 @@ function extractFromHeaders(req: Request): PatchParams {
 }
 
 function validateOperation(op: string): PatchParams["operation"] {
-  if (op === "append" || op === "prepend" || op === "replace") return op;
+  if (op === "append" || op === "prepend" || op === "replace" || op === "search-replace") return op;
   throw new ApiError(`Invalid operation: "${op}"`, ErrorCode.InvalidOperation);
 }
 
@@ -65,6 +69,22 @@ export async function applyPatch(
   file: TFile,
   params: PatchParams,
 ): Promise<string> {
+  if (params.operation === "search-replace") {
+    const fileContent = await app.vault.cachedRead(file);
+    const target = params.trimTargetWhitespace ? params.target.trim() : params.target;
+
+    if (!fileContent.includes(target)) {
+      throw createPatchError(
+        `Target string not found in file.`,
+        target,
+      );
+    }
+
+    const patched = fileContent.replace(target, params.content);
+    await app.vault.modify(file, patched);
+    return patched;
+  }
+
   if (params.targetType === "frontmatter") {
     await patchFrontmatter(app, file, params);
     return await app.vault.cachedRead(file);
@@ -156,7 +176,17 @@ export function findHeadingBounds(
   let contentEnd = fileContent.length;
   for (let i = targetIndex + 1; i < headings.length; i++) {
     if (headings[i].level <= targetLevel) {
-      contentEnd = lineToOffset(lines, headings[i].line);
+      // Walk backwards to exclude trailing blank lines and --- separators
+      let endLine = headings[i].line;
+      while (endLine > headingLine + 1) {
+        const prevLine = lines[endLine - 1].trim();
+        if (prevLine === "" || prevLine === "---") {
+          endLine--;
+        } else {
+          break;
+        }
+      }
+      contentEnd = lineToOffset(lines, endLine);
       break;
     }
   }

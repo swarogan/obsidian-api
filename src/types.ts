@@ -101,7 +101,7 @@ export interface DocumentMapObject {
 }
 
 export type PatchTargetType = "heading" | "block" | "frontmatter";
-export type PatchOperation = "append" | "prepend" | "replace";
+export type PatchOperation = "append" | "prepend" | "replace" | "search-replace";
 
 export interface PatchParams {
   operation: PatchOperation;
