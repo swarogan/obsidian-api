@@ -4,7 +4,6 @@ import { ErrorCode } from "../types";
 import { CONTENT_TYPES } from "../constants";
 import { extractPatchParams, applyPatch } from "../services/patch";
 import { lookup } from "mime-types";
-import type { TFile } from "obsidian";
 
 export function register(router: Router, ctx: HandlerContext): void {
   // /vault/ (root listing) - Express 5 *splat doesn't match empty path
