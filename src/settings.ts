@@ -16,7 +16,7 @@ export class ObsidianApiSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    new Setting(containerEl).setName("REST API settings").setHeading();
+    new Setting(containerEl).setName("Server").setHeading();
 
     // Server URLs
     if (this.plugin.settings.enableSecureServer) {
@@ -116,8 +116,8 @@ export class ObsidianApiSettingTab extends PluginSettingTab {
 
     // CORS origin
     new Setting(containerEl)
-      .setName("CORS origin")
-      .setDesc('Allowed CORS origin ("*" for all)')
+      .setName("Allowed origins")
+      .setDesc("CORS origin value (\"*\" for all)")
       .addText((text) =>
         text
           .setPlaceholder("*")

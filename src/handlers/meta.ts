@@ -20,7 +20,7 @@ export function register(router: Router, ctx: HandlerContext): void {
       status: "OK",
       manifest: ctx.manifest,
       versions: {
-        self: String(ctx.manifest.version ?? "0.0.0"),
+        self: typeof ctx.manifest.version === "string" ? ctx.manifest.version : "0.0.0",
         obsidian: appInternal.vault?.config?.version ?? "unknown",
       },
       service: "Obsidian API",
