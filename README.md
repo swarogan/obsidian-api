@@ -10,7 +10,7 @@ Compatible with [obsidian-mcp-tools](https://github.com/anthropics/obsidian-mcp-
 - **Extended endpoints** — tags, tasks, backlinks, links, outline, properties
 - **Search** — simple text, Dataview DQL, JsonLogic, semantic (via Smart Connections)
 - **Templates** — Templater integration
-- **PATCH engine** — built on Obsidian's `metadataCache` for accurate heading/block/frontmatter targeting
+- **PATCH engine** — content-based heading parsing, block/frontmatter targeting, and `search-replace` for precise text substitution
 - **Dual-mode PATCH** — JSON body (preferred) or HTTP headers (backward-compatible)
 - **HTTPS** — self-signed certificate with configurable SANs
 - **Extension API** — third-party plugins can register custom routes
@@ -95,6 +95,18 @@ Authorization: Bearer <your-api-key>
   "createTargetIfMissing": true
 }
 ```
+
+**Search-replace (find and replace text):**
+
+```json
+{
+  "operation": "search-replace",
+  "target": "- [ ] Task 1",
+  "content": "- [x] Task 1"
+}
+```
+
+No `targetType` required — replaces the first occurrence of `target` with `content` anywhere in the file.
 
 **HTTP headers (backward-compatible):**
 
