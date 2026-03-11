@@ -1,7 +1,7 @@
 import eslint from "@eslint/js";
-import { defineConfig } from "typescript-eslint";
+import tseslint from "typescript-eslint";
 
-export default defineConfig(
+export default tseslint.config(
   eslint.configs.recommended,
   {
     ignores: ["main.js", "dist/", "node_modules/", "esbuild.config.mjs", "version-bump.mjs"],
