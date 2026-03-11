@@ -6,5 +6,6 @@
   "description": "REST API for Obsidian with clean architecture and extended endpoints",
   "author": "vigeron",
   "authorUrl": "https://github.com/vigeron",
-  "isDesktopOnly": true
+  "isDesktopOnly": true,
+  "fundingUrl": "https://ko-fi.com/O4O11VQFK1"
 }
