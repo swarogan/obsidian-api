@@ -1,5 +1,5 @@
 import type { Router } from "express";
-import type { HandlerContext } from "../types";
+import type { HandlerContext, ObsidianAppInternal } from "../types";
 import { CERT_NAME } from "../constants";
 import { isAuthenticated } from "../middleware/auth";
 import { getCertificateValidityDays } from "../crypto";
@@ -15,12 +15,13 @@ export function register(router: Router, ctx: HandlerContext): void {
         }
       : { validityDays: 0, regenerateRecommended: true };
 
+    const appInternal = ctx.app as unknown as ObsidianAppInternal;
     res.json({
       status: "OK",
       manifest: ctx.manifest,
       versions: {
         self: String(ctx.manifest.version ?? "0.0.0"),
-        obsidian: (ctx.app as any).vault?.config?.version ?? "unknown",
+        obsidian: appInternal.vault?.config?.version ?? "unknown",
       },
       service: "Obsidian API",
       authenticated,

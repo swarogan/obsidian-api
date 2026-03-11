@@ -17,7 +17,7 @@ interface TreeHeading {
 }
 
 export function register(router: Router, ctx: HandlerContext): void {
-  router.get("/outline/*splat", async (req, res) => {
+  router.get("/outline/*splat", (req, res) => {
     const filePath = getSplatPath(req);
     const format = req.query.format === "tree" ? "tree" : "flat";
 

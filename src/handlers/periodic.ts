@@ -1,7 +1,8 @@
 import type { Router, Request, Response } from "express";
-import type { App, TFile } from "obsidian";
+import type { App } from "obsidian";
+import { TFile } from "obsidian";
 import { moment } from "obsidian";
-import type { HandlerContext } from "../types";
+import type { HandlerContext, ObsidianAppInternal } from "../types";
 import { ErrorCode } from "../types";
 import { vaultGet, vaultPut, vaultPost, vaultPatch, vaultDelete } from "./vault";
 
@@ -36,13 +37,13 @@ async function handlePeriodic(
   method: string,
   handler: (ctx: HandlerContext, req: Request, res: Response, path: string) => Promise<void>,
 ): Promise<void> {
-  const period = req.params.period;
+  const period = String(req.params.period);
 
   if (!VALID_PERIODS.has(period)) {
     ctx.respond.sendError(
       res,
       ErrorCode.PeriodNotConfigured,
-      `Invalid period: "${period}". Must be one of: daily, weekly, monthly, quarterly, yearly.`,
+      "Invalid period: \"" + period + "\". Must be one of: daily, weekly, monthly, quarterly, yearly.",
     );
     return;
   }
@@ -53,7 +54,7 @@ async function handlePeriodic(
       ctx.respond.sendError(
         res,
         ErrorCode.PeriodNotConfigured,
-        `The ${period} notes plugin is not configured or enabled.`,
+        "The " + period + " notes plugin is not configured or enabled.",
       );
       return;
     }
@@ -74,7 +75,8 @@ async function handlePeriodic(
         const dir = ctx.app.vault.getAbstractFileByPath(dirPath);
         if (!dir) await ctx.app.vault.createFolder(dirPath);
       }
-      file = await ctx.app.vault.create(notePath, templateContent) as TFile;
+      const created = await ctx.app.vault.create(notePath, templateContent);
+      if (created instanceof TFile) file = created;
     }
 
     if (!file) {
@@ -88,16 +90,18 @@ async function handlePeriodic(
     ctx.respond.sendError(
       res,
       ErrorCode.PeriodNotConfigured,
-      e instanceof Error ? e.message : `Failed to access ${period} note.`,
+      e instanceof Error ? e.message : "Failed to access " + period + " note.",
     );
   }
 }
 
 function getPeriodicConfig(app: App, period: PeriodType): PeriodicConfig | null {
+  const appInternal = app as unknown as ObsidianAppInternal;
+
   // 1. Check community "periodic-notes" plugin first
-  const periodicNotes = (app as any).plugins?.plugins?.["periodic-notes"];
+  const periodicNotes = appInternal.plugins?.plugins?.["periodic-notes"];
   if (periodicNotes?.settings?.[period]?.enabled) {
-    const s = periodicNotes.settings[period];
+    const s = periodicNotes.settings[period] as Record<string, string>;
     return {
       folder: s.folder ?? "",
       format: s.format ?? getDefaultFormat(period),
@@ -107,7 +111,7 @@ function getPeriodicConfig(app: App, period: PeriodType): PeriodicConfig | null 
 
   // 2. For daily: check core "daily-notes" internal plugin
   if (period === "daily") {
-    const dailyNotes = (app as any).internalPlugins?.plugins?.["daily-notes"];
+    const dailyNotes = appInternal.internalPlugins?.plugins?.["daily-notes"];
     if (dailyNotes?.enabled) {
       const s = dailyNotes.instance?.options ?? {};
       return {

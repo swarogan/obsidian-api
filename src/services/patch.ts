@@ -19,11 +19,11 @@ export function extractPatchParams(req: Request): PatchParams {
 }
 
 function extractFromBody(body: Record<string, unknown>): PatchParams {
-  const operation = validateOperation(String(body.operation ?? ""));
-  const targetType = validateTargetType(String(body.targetType ?? ""));
-  const target = String(body.target ?? "");
-  const content = String(body.content ?? "");
-  const targetDelimiter = String(body.targetDelimiter ?? "::");
+  const operation = validateOperation(typeof body.operation === "string" ? body.operation : "");
+  const targetType = validateTargetType(typeof body.targetType === "string" ? body.targetType : "");
+  const target = typeof body.target === "string" ? body.target : "";
+  const content = typeof body.content === "string" ? body.content : "";
+  const targetDelimiter = typeof body.targetDelimiter === "string" ? body.targetDelimiter : "::";
   const createTargetIfMissing = Boolean(body.createTargetIfMissing ?? false);
   const trimTargetWhitespace = Boolean(body.trimTargetWhitespace ?? false);
 

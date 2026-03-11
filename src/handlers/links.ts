@@ -19,7 +19,7 @@ interface EmbedItem {
 }
 
 export function register(router: Router, ctx: HandlerContext): void {
-  router.get("/links/*splat", async (req, res) => {
+  router.get("/links/*splat", (req, res) => {
     const filePath = getSplatPath(req);
     const limit = Number(req.query.limit) || 0;
     const resolvedFilter = req.query.resolved;

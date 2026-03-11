@@ -1,7 +1,7 @@
 import express from "express";
 import type { Response, IRoute } from "express";
 import type { TFile, CachedMetadata } from "obsidian";
-import type { HandlerContext, FileMetadataObject } from "./types";
+import type { HandlerContext, FileMetadataObject, RouterWithStack, RouterLayer } from "./types";
 import { ErrorCode } from "./types";
 
 export class ExtensionApi {
@@ -46,10 +46,11 @@ export class ExtensionApi {
   }
 
   unregister(): void {
-    const stack = (this.parentRouter as any).stack;
+    const routerInternal = this.parentRouter as unknown as RouterWithStack;
+    const stack = routerInternal.stack;
     if (Array.isArray(stack)) {
       const idx = stack.findIndex(
-        (layer: any) => layer.handle === this.router,
+        (layer: RouterLayer) => layer.handle === this.router,
       );
       if (idx !== -1) {
         stack.splice(idx, 1);

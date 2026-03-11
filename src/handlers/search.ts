@@ -1,5 +1,5 @@
 import type { Router, Request, Response } from "express";
-import type { HandlerContext, SearchResponseItem, SearchJsonResponseItem } from "../types";
+import type { HandlerContext, SearchResponseItem, SearchJsonResponseItem, ObsidianAppInternal } from "../types";
 import { ErrorCode } from "../types";
 import { CONTENT_TYPES } from "../constants";
 import { prepareSimpleSearch } from "obsidian";
@@ -53,7 +53,8 @@ async function searchDataview(
   const query = typeof req.body === "string" ? req.body : String(req.body);
 
   try {
-    const dataviewApi = (ctx.app as any).plugins?.plugins?.dataview?.api;
+    const appInternal = ctx.app as unknown as ObsidianAppInternal;
+    const dataviewApi = appInternal.plugins?.plugins?.dataview?.api;
     if (!dataviewApi) {
       ctx.respond.sendError(
         res,
@@ -131,7 +132,8 @@ async function searchSimple(
   res: Response,
 ): Promise<void> {
   const bodyQuery = typeof req.body === "string" && req.body.trim() ? req.body : "";
-  const query = bodyQuery || String(req.query.query ?? "");
+  const queryParam = typeof req.query.query === "string" ? req.query.query : "";
+  const query = bodyQuery || queryParam;
   const contextLength = Number(req.query.contextLength) || 100;
 
   if (!query.trim()) {
@@ -205,7 +207,8 @@ async function searchSmart(
   }
 
   try {
-    const smartConnections = (ctx.app as any).plugins?.plugins?.["smart-connections"];
+    const appInternal = ctx.app as unknown as ObsidianAppInternal;
+    const smartConnections = appInternal.plugins?.plugins?.["smart-connections"];
     if (!smartConnections) {
       ctx.respond.sendError(
         res,

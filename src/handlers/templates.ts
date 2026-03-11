@@ -1,5 +1,5 @@
 import type { Router, Request, Response } from "express";
-import type { HandlerContext } from "../types";
+import type { HandlerContext, ObsidianAppInternal } from "../types";
 import { ErrorCode } from "../types";
 
 export function register(router: Router, ctx: HandlerContext): void {
@@ -24,7 +24,8 @@ async function executeTemplate(
     return;
   }
 
-  const templater = (ctx.app as any).plugins?.plugins?.["templater-obsidian"];
+  const appInternal = ctx.app as unknown as ObsidianAppInternal;
+  const templater = appInternal.plugins?.plugins?.["templater-obsidian"];
   if (!templater) {
     ctx.respond.sendError(
       res,

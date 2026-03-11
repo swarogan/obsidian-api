@@ -1,11 +1,12 @@
 import type { Router } from "express";
-import type { HandlerContext } from "../types";
+import type { HandlerContext, ObsidianAppInternal } from "../types";
 import { ErrorCode } from "../types";
 
 export function register(router: Router, ctx: HandlerContext): void {
   router.get("/commands/", (_req, res) => {
-    const commands = Object.values((ctx.app as any).commands.commands).map(
-      (cmd: any) => ({
+    const appInternal = ctx.app as unknown as ObsidianAppInternal;
+    const commands = Object.values(appInternal.commands.commands).map(
+      (cmd) => ({
         id: cmd.id,
         name: cmd.name,
       }),
@@ -16,7 +17,8 @@ export function register(router: Router, ctx: HandlerContext): void {
 
   router.post("/commands/:commandId/", async (req, res) => {
     const { commandId } = req.params;
-    const commands = (ctx.app as any).commands;
+    const appInternal = ctx.app as unknown as ObsidianAppInternal;
+    const commands = appInternal.commands;
 
     if (!commands.commands[commandId]) {
       ctx.respond.sendError(res, ErrorCode.CommandNotFound);

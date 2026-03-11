@@ -7,7 +7,7 @@ interface TagInfo {
 }
 
 export function register(router: Router, ctx: HandlerContext): void {
-  router.get("/tags/", async (_req, res) => {
+  router.get("/tags/", (_req, res) => {
     const tagMap = buildTagMap(ctx);
 
     const sort = _req.query.sort === "count" ? "count" : "name";
@@ -29,7 +29,7 @@ export function register(router: Router, ctx: HandlerContext): void {
     ctx.respond.sendSuccess(res, { tags, total: Object.keys(tagMap).length });
   });
 
-  router.get("/tags/:tag", async (req, res) => {
+  router.get("/tags/:tag", (req, res) => {
     const tagMap = buildTagMap(ctx);
     const tagName = req.params.tag;
     const info = tagMap[tagName];

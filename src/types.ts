@@ -147,3 +147,50 @@ export class ApiError extends Error {
 }
 
 export type Middleware = (req: Request, res: Response, next: NextFunction) => void | Promise<void>;
+
+// Obsidian internal APIs (not publicly typed)
+export interface ObsidianCommand {
+  id: string;
+  name: string;
+}
+
+export interface ObsidianCommandManager {
+  commands: Record<string, ObsidianCommand>;
+  executeCommandById(id: string): Promise<void>;
+}
+
+export interface ObsidianPluginInstance {
+  enabled?: boolean;
+  instance?: { options?: Record<string, string> };
+  settings?: Record<string, Record<string, unknown>>;
+  env?: Record<string, unknown>;
+  templater?: { parse_template?: (config: unknown, content: string) => Promise<string> };
+  api?: Record<string, unknown>;
+}
+
+export interface ObsidianInternalPlugin {
+  enabled: boolean;
+  instance?: { options?: Record<string, string> };
+}
+
+export interface ObsidianAppInternal {
+  commands: ObsidianCommandManager;
+  plugins: { plugins: Record<string, ObsidianPluginInstance> };
+  internalPlugins: { plugins: Record<string, ObsidianInternalPlugin> };
+  vault: App["vault"] & { config?: { version?: string } };
+}
+
+// Express 5 splat params
+export interface SplatParams {
+  splat: string[];
+  [key: string]: string | string[];
+}
+
+// Express router internals for extension API
+export interface RouterLayer {
+  handle: unknown;
+}
+
+export interface RouterWithStack {
+  stack: RouterLayer[];
+}

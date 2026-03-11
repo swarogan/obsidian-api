@@ -14,9 +14,9 @@ interface TaskItem {
 
 export function register(router: Router, ctx: HandlerContext): void {
   router.get("/tasks/", async (req, res) => {
-    const statusFilter = String(req.query.status ?? "all");
-    const fileFilter = req.query.file ? String(req.query.file) : null;
-    const pathFilter = req.query.path ? String(req.query.path) : null;
+    const statusFilter = typeof req.query.status === "string" ? req.query.status : "all";
+    const fileFilter = typeof req.query.file === "string" ? req.query.file : null;
+    const pathFilter = typeof req.query.path === "string" ? req.query.path : null;
     const limit = Number(req.query.limit) || 0;
 
     let files = ctx.app.vault.getMarkdownFiles();

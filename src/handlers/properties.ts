@@ -9,7 +9,7 @@ interface PropertyInfo {
 
 export function register(router: Router, ctx: HandlerContext): void {
   // List all properties across vault
-  router.get("/properties/", async (req, res) => {
+  router.get("/properties/", (req, res) => {
     const sort = req.query.sort === "count" ? "count" : "name";
     const limit = Number(req.query.limit) || 0;
 
@@ -20,7 +20,7 @@ export function register(router: Router, ctx: HandlerContext): void {
       const cache = ctx.app.metadataCache.getFileCache(file);
       if (!cache?.frontmatter) continue;
 
-      for (const [key, value] of Object.entries(cache.frontmatter)) {
+      for (const key of Object.keys(cache.frontmatter)) {
         if (key === "position") continue;
 
         if (!propMap.has(key)) {
@@ -46,7 +46,7 @@ export function register(router: Router, ctx: HandlerContext): void {
   });
 
   // Get properties of a specific file
-  router.get("/properties/*splat", async (req, res) => {
+  router.get("/properties/*splat", (req, res) => {
     const filePath = getSplatPath(req);
     const file = ctx.app.vault.getFileByPath(filePath);
     if (!file) {

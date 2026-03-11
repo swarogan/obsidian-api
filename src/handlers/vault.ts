@@ -1,10 +1,10 @@
 import type { Router, Request, Response } from "express";
-import type { HandlerContext, FileMetadataObject } from "../types";
+import type { HandlerContext, SplatParams } from "../types";
 import { ErrorCode } from "../types";
 import { CONTENT_TYPES } from "../constants";
 import { extractPatchParams, applyPatch } from "../services/patch";
 import { lookup } from "mime-types";
-import type { TFile, TFolder } from "obsidian";
+import type { TFile } from "obsidian";
 
 export function register(router: Router, ctx: HandlerContext): void {
   // /vault/ (root listing) - Express 5 *splat doesn't match empty path
@@ -40,7 +40,7 @@ export function register(router: Router, ctx: HandlerContext): void {
 
 export function getSplatPath(req: Request): string {
   // Express 5 splat param
-  const splat = (req.params as any).splat;
+  const splat = (req.params as unknown as SplatParams).splat;
   if (Array.isArray(splat)) return splat.join("/");
   return String(splat ?? "");
 }
@@ -176,7 +176,7 @@ export async function vaultDelete(
     return;
   }
 
-  await ctx.app.vault.delete(file);
+  await ctx.app.fileManager.trashFile(file);
   res.status(204).send();
 }
 

@@ -16,29 +16,27 @@ export class ObsidianApiSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "Obsidian API Settings" });
+    new Setting(containerEl).setName("REST API settings").setHeading();
 
     // Server URLs
     if (this.plugin.settings.enableSecureServer) {
-      containerEl.createEl("p", {
-        text: `HTTPS: https://${this.plugin.settings.bindingHost}:${this.plugin.settings.port}`,
-        cls: "setting-item-description",
-      });
+      new Setting(containerEl)
+        .setName("HTTPS address")
+        .setDesc(`https://${this.plugin.settings.bindingHost}:${this.plugin.settings.port}`);
     }
     if (this.plugin.settings.enableInsecureServer) {
-      containerEl.createEl("p", {
-        text: `HTTP: http://${this.plugin.settings.bindingHost}:${this.plugin.settings.insecurePort}`,
-        cls: "setting-item-description",
-      });
+      new Setting(containerEl)
+        .setName("HTTP address")
+        .setDesc(`http://${this.plugin.settings.bindingHost}:${this.plugin.settings.insecurePort}`);
     }
 
     // API Key
     new Setting(containerEl)
-      .setName("API Key")
+      .setName("API key")
       .setDesc("Bearer token for authentication")
       .addText((text) =>
         text
-          .setPlaceholder("API Key")
+          .setPlaceholder("API key")
           .setValue(this.plugin.settings.apiKey)
           .setDisabled(true),
       )
@@ -57,7 +55,7 @@ export class ObsidianApiSettingTab extends PluginSettingTab {
 
     // HTTPS Port
     new Setting(containerEl)
-      .setName("HTTPS Port")
+      .setName("HTTPS port")
       .setDesc("Port for the secure HTTPS server")
       .addText((text) =>
         text
@@ -74,7 +72,7 @@ export class ObsidianApiSettingTab extends PluginSettingTab {
 
     // Enable insecure server
     new Setting(containerEl)
-      .setName("Enable HTTP Server")
+      .setName("Enable HTTP server")
       .setDesc("Enable insecure HTTP server (not recommended)")
       .addToggle((toggle) =>
         toggle
@@ -87,7 +85,7 @@ export class ObsidianApiSettingTab extends PluginSettingTab {
 
     // HTTP Port
     new Setting(containerEl)
-      .setName("HTTP Port")
+      .setName("HTTP port")
       .setDesc("Port for the insecure HTTP server")
       .addText((text) =>
         text
@@ -104,7 +102,7 @@ export class ObsidianApiSettingTab extends PluginSettingTab {
 
     // Binding host
     new Setting(containerEl)
-      .setName("Binding Host")
+      .setName("Binding host")
       .setDesc("Host to bind the server to (127.0.0.1 for local only)")
       .addText((text) =>
         text
@@ -118,7 +116,7 @@ export class ObsidianApiSettingTab extends PluginSettingTab {
 
     // CORS origin
     new Setting(containerEl)
-      .setName("CORS Origin")
+      .setName("CORS origin")
       .setDesc('Allowed CORS origin ("*" for all)')
       .addText((text) =>
         text
@@ -131,10 +129,10 @@ export class ObsidianApiSettingTab extends PluginSettingTab {
       );
 
     // Certificate management
-    containerEl.createEl("h3", { text: "Certificate" });
+    new Setting(containerEl).setName("Certificate").setHeading();
 
     new Setting(containerEl)
-      .setName("Regenerate Certificate")
+      .setName("Regenerate certificate")
       .setDesc("Generate a new self-signed certificate")
       .addButton((button) =>
         button.setButtonText("Regenerate").onClick(async () => {
@@ -149,7 +147,7 @@ export class ObsidianApiSettingTab extends PluginSettingTab {
 
     // Subject Alt Names
     new Setting(containerEl)
-      .setName("Subject Alternative Names")
+      .setName("Subject alternative names")
       .setDesc("Additional hostnames/IPs for the certificate (one per line)")
       .addTextArea((text) =>
         text
