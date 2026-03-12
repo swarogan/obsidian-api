@@ -117,7 +117,7 @@ export class ObsidianApiSettingTab extends PluginSettingTab {
     // CORS origin
     new Setting(containerEl)
       .setName("Allowed origins")
-      .setDesc("CORS origin value (\"*\" for all)")
+      .setDesc("Set the allowed origin for cross-origin requests (\"*\" for all).")
       .addText((text) =>
         text
           .setPlaceholder("*")
@@ -148,7 +148,7 @@ export class ObsidianApiSettingTab extends PluginSettingTab {
     // Subject Alt Names
     new Setting(containerEl)
       .setName("Subject alternative names")
-      .setDesc("Additional hostnames/IPs for the certificate (one per line)")
+      .setDesc("Extra hostnames or IP addresses for the certificate, one per line.")
       .addTextArea((text) =>
         text
           .setPlaceholder("192.168.1.100\nmyhost.local")
