@@ -123,7 +123,15 @@ export async function applyPatch(
     throw err;
   }
 
-  const patched = patchContent(fileContent, bounds, params.operation, params.content);
+  let content = params.content;
+
+  // When replacing a heading target and the content starts with the same heading,
+  // strip it to prevent duplication (LLMs often include the heading in content).
+  if (params.operation === "replace" && params.targetType === "heading") {
+    content = stripLeadingHeadingIfMatch(content, params.target, params.targetDelimiter);
+  }
+
+  const patched = patchContent(fileContent, bounds, params.operation, content);
   await app.vault.modify(file, patched);
   return patched;
 }
@@ -327,6 +335,21 @@ function createMissingHeading(fileContent: string, params: PatchParams): string 
 
   const separator = fileContent.endsWith("\n") ? "\n" : "\n\n";
   return fileContent + separator + heading + "\n" + params.content + "\n";
+}
+
+/**
+ * If content starts with an ATX heading that matches the target heading name,
+ * strip it to prevent duplication when using replace on a heading target.
+ */
+function stripLeadingHeadingIfMatch(content: string, target: string, delimiter: string): string {
+  const headingName = target.split(delimiter).pop()?.trim() ?? "";
+  if (!headingName) return content;
+
+  const match = content.match(/^(#{1,6})\s+(.+?)(?:\s+#+\s*)?\n/);
+  if (match && match[2].trim() === headingName) {
+    return content.slice(match[0].length);
+  }
+  return content;
 }
 
 function lineToOffset(lines: string[], lineNumber: number): number {
